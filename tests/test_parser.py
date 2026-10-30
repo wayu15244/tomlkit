@@ -246,3 +246,32 @@ def test_parser_accepts_uppercase_exponent_after_leading_zero() -> None:
         value = Parser(f"a = {raw}").parse()["a"]
         assert isinstance(value, Float)
         assert value == float(raw)
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ("ключ = 1\n", {"ключ": 1}),
+        ("日本 = 1\n", {"日本": 1}),
+        ("a.é = 1\n", {"a": {"é": 1}}),
+        ("[é.ü]\nx = 1\n", {"é": {"ü": {"x": 1}}}),
+        ("a = {é = 1}\n", {"a": {"é": 1}}),
+        ("a² = 1\n", {"a²": 1}),
+        ("\U00010000 = 1\n", {"\U00010000": 1}),
+    ],
+)
+def test_parser_accepts_non_ascii_bare_keys(content: str, expected: dict) -> None:
+    import tomlkit
+
+    doc = tomlkit.parse(content)
+    assert doc.unwrap() == expected
+    assert tomlkit.dumps(doc) == content
+
+
+@pytest.mark.parametrize("content", ["× = 1\n", "÷ = 1\n", "· = 1\n"])
+def test_parser_rejects_non_ascii_chars_outside_bare_key_ranges(content: str) -> None:
+    import tomlkit
+    from tomlkit.exceptions import TOMLKitError
+
+    with pytest.raises(TOMLKitError):
+        tomlkit.parse(content)

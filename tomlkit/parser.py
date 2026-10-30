@@ -66,6 +66,31 @@ _NL = frozenset("\n\r")
 _WS = _SPACES | _NL
 _KV = frozenset("= \t")
 _BARE_KEY_OR_SPACE = frozenset(string.ascii_letters + string.digits + "-_ \t")
+# Non-ASCII code point ranges allowed in bare keys by TOML v1.1.0.
+_NON_ASCII_BARE_KEY_RANGES = (
+    (0xB2, 0xB3),
+    (0xB9, 0xB9),
+    (0xBC, 0xBE),
+    (0xC0, 0xD6),
+    (0xD8, 0xF6),
+    (0xF8, 0x37D),
+    (0x37F, 0x1FFF),
+    (0x200C, 0x200D),
+    (0x203F, 0x2040),
+    (0x2070, 0x218F),
+    (0x2C00, 0x2FEF),
+    (0x3001, 0xD7FF),
+    (0xF900, 0xFDCF),
+    (0xFDF0, 0xFFFD),
+    (0x10000, 0xEFFFF),
+)
+
+
+def _is_non_ascii_bare_key_char(c: str) -> bool:
+    cp = ord(c)
+    return cp > 0x7F and any(lo <= cp <= hi for lo, hi in _NON_ASCII_BARE_KEY_RANGES)
+
+
 _NUM_STOP = frozenset(" \t\n\r#,]}")
 _DATE_TAIL_STOP = frozenset("\t\n\r#,]}")
 # Control chars invalid inside a single-line string (DEL + everything <= 0x1F
@@ -463,7 +488,11 @@ class Parser:
         """
         Parses a bare key.
         """
-        self._src.advance_while(_BARE_KEY_OR_SPACE)
+        while True:
+            self._src.advance_while(_BARE_KEY_OR_SPACE)
+            if self._src.end() or not _is_non_ascii_bare_key_char(self._current):
+                break
+            self._src.inc()
 
         original = self.extract()
         key_s = original.strip()

@@ -1,5 +1,11 @@
 # Change Log
 
+## [Unreleased]
+
+### Fixed
+
+- Fix parsing of non-ASCII bare keys (e.g. `ключ = 1`, `[日本]`), which were rejected with `EmptyKeyError` although TOML v1.1.0 allows them.
+
 ## [0.15.1] - 2026-07-17
 
 ### Changed
