@@ -1804,3 +1804,41 @@ def test_emptied_array_of_tables_is_relative_to_the_nearest_header() -> None:
     doc["t"]["u"]["a"].pop()
 
     assert doc.as_string() == "[t]\nu.a = []\n"
+
+
+@pytest.mark.parametrize(
+    ("content", "child", "expected"),
+    [
+        # The intermediate "a" of "[[a.a.b]]" is a plain table inside the last
+        # element of the "a" array, not another array of tables.
+        (
+            "[[a]]\n[[a]]\n[[a.a.b]]\n[[a.a.b]]\n",
+            "a",
+            {"a": [{}, {"a": {"b": [{}, {}]}}]},
+        ),
+        (
+            "[[a]]\n[[a]]\n[[a.a.a]]\n[[a.a.a]]\n",
+            "a",
+            {"a": [{}, {"a": {"a": [{}, {}]}}]},
+        ),
+        (
+            "[[a]]\n[[a]]\n[a.a]\nx = 1\n[[a.a.a]]\n",
+            "a",
+            {"a": [{}, {"a": {"x": 1, "a": [{}]}}]},
+        ),
+        # Control: a differently named intermediate table was already correct.
+        (
+            "[[a]]\n[[a]]\n[[a.c.b]]\n[[a.c.b]]\n",
+            "c",
+            {"a": [{}, {"c": {"b": [{}, {}]}}]},
+        ),
+    ],
+)
+def test_aot_subtable_named_like_the_enclosing_aot(
+    content: str, child: str, expected: dict
+) -> None:
+    doc = parse(content)
+
+    assert doc.unwrap() == expected
+    assert type(doc["a"][1][child]).__name__ == "Table"
+    assert doc.as_string() == content

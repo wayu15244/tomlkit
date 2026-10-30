@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Fix a table inside the last element of an array of tables being parsed as an array of tables when it shares the array's name (e.g. `[[a]]`, `[[a]]`, `[[a.a.b]]`, `[[a.a.b]]` parsed `a.a` as an array instead of a table).
 - Arithmetic and `replace()` results for `Integer`, `Float`, `String`, `DateTime`, `Date` and `Time` no longer share the original item's `Trivia`, so changing the result's comment or indentation no longer rewrites the item still stored in the document.
 
 ## [0.15.2] - 2026-10-16

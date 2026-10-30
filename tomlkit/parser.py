@@ -1091,7 +1091,7 @@ class Parser:
                 table = Table(
                     Container(True),
                     Trivia("", cws, comment, trail),
-                    is_aot and name_parts[0] in self._aot_stack,
+                    False,
                     is_super_table=True,
                     name=name_parts[0].key,
                 )
